@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Client" ADD COLUMN     "status" INTEGER NOT NULL DEFAULT 1;

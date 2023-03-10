@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  phone     String
+  createdAt DateTime @default(now())
+}
+
+model Client {
+  id           Int        @unique
+  categorypage String
+  name         String
+  smartpages   String[]
+  scores       Score[]
+  psiscores    Psi_Score[]
+  status       Int        @default(1)
+}
+
+model Score {
+  scoreId    String   @id @default(cuid())
+  score      String
+  client_id  Int
+  client     Client   @relation(fields: [client_id], references: [id])
+  score_type Int
+  date       DateTime @default(now())
+}
+
+model Psi_Score {
+  scoreId          String   @id @default(cuid())
+  client_id        Int
+  client           Client   @relation(fields: [client_id], references: [id])
+  score_type       Int
+  date             DateTime @default(now())
+  field_fcp        Int?
+  field_fid        Int?
+  field_cls        Int?
+  field_lcp        Int?
+  field_inp        Int?
+  field_ttfb       Int?
+  lighthouse_score Int
+  lighthouse_fcp   Int?
+  lighthouse_si    Int?
+  lighthouse_tti   Int?
+  lighthouse_tbt   Int?
+  lighthouse_cls   Float?
+  lighthouse_lcp   Int?
+}
