@@ -1,6 +1,5 @@
 import Collapse from "./collapse";
 import DataGridContainer from "../components/dataGrid";
-import ClientChart from "./clientChart";
 
 import { ClientDataType } from "../types";
 
@@ -9,7 +8,6 @@ import { ClientDataType } from "../types";
 const ClientDataContainer: React.FC<{ client: ClientDataType }> = ({
   client,
 }) => {
-  console.log('client', client)
   return (
     <div className="flex flex-col gap-5 w-full">
       <Collapse

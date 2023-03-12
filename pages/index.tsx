@@ -54,14 +54,13 @@ export type ClientInfoType = {
 export async function getServerSideProps() {
   let prisma;
   //check if we are running in production mode
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === 'production') {
     prisma = new PrismaClient();
   } else {
-    //check if there is already a connection to the database
-    if (!global.prisma) {
-      global.prisma = new PrismaClient();
+    if (!(global as any).prisma) {
+      (global as any).prisma = new PrismaClient();
     }
-    prisma = global.prisma;
+    prisma = (global as any).prisma;
   }
 
 
@@ -146,7 +145,7 @@ const Home: React.FC<{ clientDataSortedAlphabetically: Array<ClientDataType>, cl
         </div>
         {clientDataSortedAlphabetically.map((client: ClientDataType) => {
           return (
-            <ClientDataContainer client={client} />
+            <ClientDataContainer key={client.id} client={client} />
           );
         })
         }

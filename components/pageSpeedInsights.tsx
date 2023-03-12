@@ -1,5 +1,5 @@
 import axios from 'axios';
-import chunk from 'lodash.chunk';
+import {chunk} from 'lodash';
 import { useState } from "react";
 import Progressbar from './progressbar';
 
@@ -18,14 +18,14 @@ const PageSpeedInsightsComponent: React.FC<{ clientList: Array<ClientInfoType> }
   const [totalFailed, setTotalFailed] = useState<string[]>([]);
   const [totalSuccessUrls, setTotalSuccessUrls] = useState<string[]>([]);
 
-  function runPSIForSiingleClient(client: ClientInfoType) {
-    axios.get(setUpQuery(client.categorypage)).then(function (values) {
-      formatAndPushData(values, client.id, 0)
-    });
-    axios.get(setUpQuery(client.smartpages)).then(function (values) {
-      formatAndPushData(values, client.id, 1)
-    });
-  }
+  // function runPSIForSiingleClient(client: ClientInfoType) {
+  //   axios.get(setUpQuery(client.categorypage)).then(function (values) {
+  //     formatAndPushData(values, client.id, 0)
+  //   });
+  //   axios.get(setUpQuery(client.smartpages)).then(function (values) {
+  //     formatAndPushData(values, client.id, 1)
+  //   });
+  // }
 
   const updateProgress = (url:string, success_state:boolean) => {
     if(success_state){
@@ -67,9 +67,9 @@ const PageSpeedInsightsComponent: React.FC<{ clientList: Array<ClientInfoType> }
     for (const batchCall of batchCalls) {
   
       await Promise.allSettled(batchCall.map((batch: apiWaitListType) => {
-        return axios.get(batch.url).then(function (values) {
+        return axios.get(batch.url).then(function (res) {
           updateProgress(batch.unformattedUrl, true)
-          formatAndPushData(values, batch.client_id, batch.score_type)
+          formatAndPushData(res.data, batch.client_id, batch.score_type)
   
         }).catch(err => {
           console.log(err)
@@ -87,8 +87,64 @@ const PageSpeedInsightsComponent: React.FC<{ clientList: Array<ClientInfoType> }
   )
 }
 
-const formatAndPushData = (res, client_id: Number, score_type: Number) => {
-  let data = res.data;
+type psiDataAPIResponseType = {
+  loadingExperience: {
+    id: string;
+    metrics: {
+      FIRST_CONTENTFUL_PAINT_MS: {
+        percentile: number;
+      };
+      FIRST_INPUT_DELAY_MS: {
+        percentile: number;
+      };
+      CUMULATIVE_LAYOUT_SHIFT_SCORE: {
+        percentile: number;
+      };
+      LARGEST_CONTENTFUL_PAINT_MS: {
+        percentile: number;
+      };
+      EXPERIMENTAL_INTERACTION_TO_NEXT_PAINT: {
+        percentile: number;
+      };
+      EXPERIMENTAL_TIME_TO_FIRST_BYTE: {
+        percentile: number;
+      };
+    };
+  };
+  lighthouseResult: {
+    audits: {
+      'first-contentful-paint': {
+        numericValue: number;
+      };
+      'speed-index': {
+        numericValue: number;
+      };
+      interactive: {
+        numericValue: number;
+      };
+      'total-blocking-time': {
+        numericValue: number;
+      };
+      'max-potential-fid': {
+        numericValue: number;
+      };
+      'cumulative-layout-shift': {
+        numericValue: number;
+      };
+      'largest-contentful-paint': {
+        numericValue: number;
+      };
+    },
+    categories: {
+      performance: {
+        score: number;
+      };
+    };
+  }
+};
+
+const formatAndPushData = (data:psiDataAPIResponseType, client_id: Number, score_type: Number) => {
+  console.log('res',data)
   const cruxMetrics = {
     field_fcp: data.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.percentile,
     field_fid: data.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.percentile,
@@ -115,8 +171,6 @@ const formatAndPushData = (res, client_id: Number, score_type: Number) => {
   };
   axios.post('/api/newPsiScore', psiMetrics)
 }
-
-
 
 function setUpQuery(url: string) {
   // if url is array use random value from array
