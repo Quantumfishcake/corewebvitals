@@ -2,6 +2,7 @@ import "react-data-grid/lib/styles.css";
 import DataGrid from "react-data-grid";
 import { PSIScoreType } from "../types";
 import { metricRanges } from "../constants";
+import { InView } from 'react-intersection-observer';
 
 const colSpanClassnameLow = 'text-green-600'
 const colSpanClassnameMed = 'text-yellow-600'
@@ -24,7 +25,7 @@ const columnsInitial = [
   { key: "field_ttfb", name: "Field TTFB" }
 ];
 
-function isPSIScoreValue(value: string = ""):value is keyof PSIScoreType {
+function isPSIScoreValue(value: string = ""): value is keyof PSIScoreType {
   switch (value) {
     case "scoreId":
     case "date":
@@ -68,13 +69,13 @@ const columns = columnsInitial.map((c) => ({
     if (c.key === 'lighthouse_score') return row[c.key]
     if (c.key === 'field_cls') return (row[c.key])
     if (c.key === 'lighthouse_cls') return (row[c.key].toFixed(3))
-    if(isPSIScoreValue(c.key)){
+    if (isPSIScoreValue(c.key)) {
       return formatDataToSecondsAndMilliseconds(row[c.key])
     }
   }
 }));
 
-const DataGridContainer = ({ psiscores, lux_url, client_url }: { psiscores: Array<PSIScoreType>, lux_url: string[], client_url: string }) => {
+const DataGridContainer = ({ psiscores }: { psiscores: Array<PSIScoreType> }) => {
 
   const getLuxScoresOnly = () => {
     const luxScores = psiscores?.filter((score: PSIScoreType) => score.score_type === 1);
@@ -88,13 +89,18 @@ const DataGridContainer = ({ psiscores, lux_url, client_url }: { psiscores: Arra
     return clientScores?.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
+  // only load the grid when inview (opened)
   return (
-    <div>
-      <div className="p-2"><span>Lux page: </span><a href={lux_url[0]} target="_blank" rel="noreferrer" className="text-blue-400">{lux_url}</a></div>
-      <DataGrid columns={columns} rows={getLuxScoresOnly()} />
-      <div className="p-2"><span>Client page: </span><a href={client_url} target="_blank" rel="noreferrer" className="text-blue-400">{client_url}</a></div>
-      <DataGrid columns={columns} rows={getClientScoresOnly()} />
-    </div>
+    <InView as="div" onChange={(inView, entry) => console.log('Inview:', inView)}>
+      {({ inView, ref, entry }) => (
+        <div ref={ref}>
+          {inView ? <div id="data_grid_container">
+            <DataGrid columns={columns} rows={getLuxScoresOnly()} />
+            <DataGrid columns={columns} rows={getClientScoresOnly()} />
+          </div> : null}
+        </div>
+      )}
+    </InView>
   );
 };
 
@@ -105,3 +111,4 @@ const formatDataToSecondsAndMilliseconds = (millis: number) => {
 };
 
 export default DataGridContainer;
+

@@ -2,54 +2,13 @@ import Head from "next/head";
 import styles from "@/styles/Home.module.css";
 import ClientDataContainer from "@/components/clientDataContainer";
 import PageSpeedInsightsComponent from "@/components/pageSpeedInsights";
-import Modal from "@/components/modal";
-
-import { PrismaClient, Prisma } from "@prisma/client";
-
-export type ClientDataType = {
-  id: number;
-  name: string;
-  psiscores: PSIScoreType[];
-  scores: ScoreType[];
-  smartpages: string[];
-  categorypage: string;
-  status: number;
-};
-
-export type PSIScoreType = {
-  scoreId: String;
-  date: any;
-  score_type: number;
-  field_fcp: number;
-  field_fid: number;
-  field_cls: number;
-  field_lcp: number;
-  field_inp: number;
-  field_ttfb: number;
-  lighthouse_score: number;
-  lighthouse_fcp: number;
-  lighthouse_si: number;
-  lighthouse_tti: number;
-  lighthouse_tbt: number;
-  lighthouse_cls: number;
-  lighthouse_lcp: number;
-};
-
-export type ScoreType = {
-  scoreId: String;
-  date: any;
-  score_type: number;
-  score: number;
-}
-
-export type ClientInfoType = {
-  id: number;
-  name: string;
-  smartpages: string;
-  categorypage: string;
-  status: number;
-};
-
+import ClientListContainer from "@/components/clientListContainer";
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
+import Nav from "@/components/nav";
+import { PrismaClient } from "@prisma/client";
+import { ToastContainer } from "react-toastify";
+import { ClientDataType, PSIScoreType } from "@/types";
 
 export async function getServerSideProps() {
   let prisma;
@@ -63,72 +22,76 @@ export async function getServerSideProps() {
     prisma = (global as any).prisma;
   }
 
+  const clientData = await prisma.Client.findMany({});
 
-  const clientData = await prisma.Client.findMany({
-    // get all scores for each client where score type is 1
-    // include: {
-    //   scores:{
-    //     where:{
-    //       score_type: 1
-    //     }
-    //   }
-    // },
-    include: {
-      scores: {
-        orderBy: {
-          date: 'asc',
-        },
-      },
-      psiscores: {
-        orderBy: {
-          date: 'asc',
-        },
-      }
-    },
-  });
-  const clientList = clientData.map((client: ClientInfoType) => {
-    return {
-      id: client.id,
-      name: client.name,
-      smartpages: client.smartpages,
-      categorypage: client.categorypage
-    };
-  });
-  // format dates to ISO string
+  // remove inactive clients 
+  const clientList = clientData.filter((client: ClientDataType) => { return client.status === 1 });
+
+  // sort alphabetically
+  const clientListSortedAlphabetically = clientList.sort((a: ClientDataType, b: ClientDataType) => a.name.localeCompare(b.name));
+
+  return {
+    props: {
+      clientListSortedAlphabetically,
+    }
+  };
+}
+
+const getClientData = async () => {
+  const res = await fetch('/api/getClientData');
+  const data = await res.json();
+  return data;
+}
+
+const formatClientData = (clientData: Array<ClientDataType>) : Array<ClientDataType> => {
+
+
+  // format dates
   clientData.map((client: ClientDataType) => {
-    client.scores.map((score: ScoreType) => {
-      return (score.date = score.date.toISOString().split("T")[0]);
-    });
-    client.psiscores.map((psiscore:PSIScoreType) => {
-      return (psiscore.date = psiscore.date.toISOString().split("T")[0]);
+    if(!client.psiscores) return;
+    client.psiscores.map((psiscore: PSIScoreType) => {
+      return (psiscore.date = psiscore.date.split("T")[0]);
     });
   });
-  // remove duplicate date scores 
+
+
+  // return the highest score per day for each client 
   clientData.map((client: ClientDataType) => {
-    client.psiscores = client.psiscores.filter((score:PSIScoreType, index: number, self: PSIScoreType[]) => {
+    if(!client.psiscores) return;
+    client.psiscores = client.psiscores.filter((score: PSIScoreType, index: number, self: PSIScoreType[]) => {
       return index === self.findIndex((t: PSIScoreType) => (
         t.date === score.date && t.score_type === score.score_type
       ));
     });
   })
-  // remove inactive clients 
-  clientData.map((client: ClientDataType) => {
-    if (client.status === 0) {
-      clientData.splice(clientData.indexOf(client), 1);
-    }
-  });
-  
 
-  const clientDataSortedAlphabetically = clientData.sort((a: ClientDataType, b: ClientDataType) => a.name.localeCompare(b.name));
-  return {
-    props: {
-      clientDataSortedAlphabetically,
-      clientList,
-    },
-  };
+  // remove inactive clients 
+  clientData = clientData.filter((client: ClientDataType) => { return client.status === 1 });
+
+  // sort alphabetically
+  return clientData.sort((a: ClientDataType, b: ClientDataType) => a.name.localeCompare(b.name));
+
 }
 
-const Home: React.FC<{ clientDataSortedAlphabetically: Array<ClientDataType>, clientList: Array<ClientInfoType> }> = ({ clientDataSortedAlphabetically, clientList }) => {
+
+const Home: React.FC<{ clientListSortedAlphabetically: ClientDataType[] }> = ({ clientListSortedAlphabetically }) => {
+
+  const { isLoaded: userLoaded, isSignedIn } = useUser();
+  const [clientData, setClientData] = useState<ClientDataType[] | []>(clientListSortedAlphabetically);
+
+  const getData = async () => {
+    const clientData = await getClientData();
+    if(clientData.length === 0) return;
+    const clientDataSortedAlphabetically = formatClientData(clientData);
+    setClientData(clientDataSortedAlphabetically);
+  }
+
+  // setdata on load 
+  useEffect(() => {
+    getData();
+  }, []);
+
+  if (!userLoaded) return <div />;
 
   return (
     <>
@@ -138,17 +101,20 @@ const Home: React.FC<{ clientDataSortedAlphabetically: Array<ClientDataType>, cl
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div id="runPSI">
-          <Modal title={'CWV Metrics Info'} body={'yp'} buttonText={'CWV Metrics Info'} />
-          <PageSpeedInsightsComponent clientList={clientList} />
-        </div>
-        {clientDataSortedAlphabetically.map((client: ClientDataType) => {
+      <Nav />
+      <main className="bg-slate-900 p-10">
+        {isSignedIn &&
+          <div id="runPSI">
+            <PageSpeedInsightsComponent clientList={clientListSortedAlphabetically} />
+            <ClientListContainer clientList={clientListSortedAlphabetically} updateData={getData} />
+          </div>}
+        {clientData.map((client: ClientDataType ) => {
           return (
             <ClientDataContainer key={client.id} client={client} />
           );
         })
         }
+        <ToastContainer />
       </main>
     </>
   );

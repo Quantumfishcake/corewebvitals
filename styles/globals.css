@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-div[role="grid"]{
-    height: auto;
+div[role="grid"] {
+  height: auto;
+}
+body{
+  color: rgb(156 163 175);
+}
+
+.dark-bg{
+    background-color: rgb(15 23 42);
+}
+.dark-content{
+    background-color: rgb(30 41 59);
+    border: 1px solid rgb(51 65 85);
+    color: rgb(203 213 225);
 }

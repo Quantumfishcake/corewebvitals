@@ -1,8 +1,9 @@
 import Collapse from "./collapse";
 
+import { ScoreInfoType } from "@/types";
 
-const Progressbar: React.FC<{ successfulUrls: String[], failedUrls: String[], totalUrls: number }> = ({ successfulUrls, failedUrls, totalUrls }) => {
-    if(totalUrls === 0){
+const Progressbar: React.FC<{ successfulUrls: ScoreInfoType[], failedUrls: String[], totalUrls: number }> = ({ successfulUrls, failedUrls, totalUrls }) => {
+    if (totalUrls === 0) {
         return null
     }
     if (successfulUrls.length + failedUrls.length === totalUrls) {
@@ -25,12 +26,13 @@ const Progressbar: React.FC<{ successfulUrls: String[], failedUrls: String[], to
         )
     }
     return (
-        <div className="flex flex-wrap">
-            <progress className="progress progress-primary w-72" value={successfulUrls.length + failedUrls.length} max={totalUrls}></progress>
-            <span>Total: {successfulUrls.length + failedUrls.length} <span>/</span> {totalUrls}</span>
-
-            <div className="w-full">
-                {successfulUrls.length ? <Collapse title={successTitle()} content={successfulUrls?.map((url, index) => <div key={index}>{url}</div>)} /> : null}
+        <div className="flex flex-wrap bg-slate-800 p-5 rounded-box border-slate-700 border">
+            <div className="flex justify-between w-full items-center">
+                <progress className="progress progress-primary w-4/5 border-slate-700 border" value={successfulUrls.length + failedUrls.length} max={totalUrls}></progress>
+                <div>Total: {successfulUrls.length + failedUrls.length} <span>/</span> {totalUrls}</div>
+            </div>
+            <div className="w-full mt-3">
+                {successfulUrls.length ? <Collapse title={successTitle()} content={successfulUrls?.map((url, index) => <div key={index} className="flex justify-between hover:bg-slate-900"><div>{url.url}</div><div>{Math.round(url.score * 100)}</div></div>)} /> : null}
                 {failedUrls.length ? <Collapse title={failedTitle()} content={failedUrls?.map((url, index) => <div key={index}>{url}</div>)} /> : null}
             </div>
         </div>
