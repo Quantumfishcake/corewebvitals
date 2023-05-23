@@ -131,10 +131,10 @@ const ClientListContainer: React.FC<{ clientList: Array<ClientDataType>, updateD
           processRowUpdate={processRowUpdate}
           sx={{
             boxShadow: 2,
-            background: 'rgb(30 41 59)',
+            background: 'rgb(51 65 85)',
             border: 1,
             color: 'rgb(226 232 240)',
-            borderColor: 'rgb(51 65 85)',
+            borderColor: 'rgb(71 85 105)',
             '& .super-app-theme--header': {
               backgroundColor: 'rgb(15 23 42)',
             },

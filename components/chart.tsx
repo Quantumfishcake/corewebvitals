@@ -14,7 +14,6 @@ import {
 } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import { Line } from 'react-chartjs-2';
-
 import { PSIScoreType } from '@/types';
 
 ChartJS.register(
@@ -132,12 +131,12 @@ const LUXChart: React.FC<{ psiscores: Array<PSIScoreType> }> = ({
   psiscores,
 }) => {
 
-  const getLuxScoresOnly = () : PSIScoreType[] => {
-    const luxScores = psiscores?.filter((score: PSIScoreType) => score.score_type === 1);
-    // order by date
-    if (!luxScores) return [];
-    return luxScores?.sort((b, a) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  };
+  // const getLuxScoresOnly = () : PSIScoreType[] => {
+  //   const luxScores = psiscores?.filter((score: PSIScoreType) => score.score_type === 1);
+  //   // order by date
+  //   if (!luxScores) return [];
+  //   return luxScores?.sort((b, a) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // };
 
   // get the trend line from an array of numbers
   const getTrendLine = (data: number[]) : number[] => {
@@ -152,9 +151,11 @@ const LUXChart: React.FC<{ psiscores: Array<PSIScoreType> }> = ({
     return x.map((n) => m * n + b);
   };
 
-  const luxScores = getLuxScoresOnly();
+  const luxScores = psiscores;
   const luxLighthouseScores = luxScores.map((score) => score.lighthouse_score);
-  const labels = luxScores.map((score) => score.date);
+  const labels = luxScores.map((score) => {
+    return score.date.split("-").slice(1).join("-");
+  });
   const trendingData = getTrendLine(luxScores.map((score) => score.lighthouse_score))
   const luxLCPData = luxScores.map((score) => score.lighthouse_lcp);
   const luxFCPData = luxScores.map((score) => score.lighthouse_fcp);
@@ -168,8 +169,8 @@ const LUXChart: React.FC<{ psiscores: Array<PSIScoreType> }> = ({
         type: 'line' as const,
         label: 'Trending',
         data: trendingData,
-        borderColor: 'rgb(53, 162, 235)',
-        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+        borderColor: 'rgb(68,183,194)',
+        backgroundColor: 'rgba(68,183,194, 0.5)',
         color: '#fff'
       },
       {
@@ -177,7 +178,7 @@ const LUXChart: React.FC<{ psiscores: Array<PSIScoreType> }> = ({
         label: 'Lighthouse Score',
         data: luxLighthouseScores,
         // borderColor: 'rgb(39, 183, 145)',
-        backgroundColor: 'rgba(255, 107, 139, 0.75)',
+        backgroundColor: 'rgb(255,174,73)',
         color: '#fff',
       }
     ],
@@ -222,7 +223,7 @@ const LUXChart: React.FC<{ psiscores: Array<PSIScoreType> }> = ({
   };
 
   return (
-    < div className='bg-slate-800 flex h-80'>
+    <div className='flex-1 w-full border-slate-600 bg-slate-700 my-3 border rounded-box flex p-3'>
       <div className="flex-1">
         <Chart type='bar' data={mainScoreData} options={options2} />
       </div>
